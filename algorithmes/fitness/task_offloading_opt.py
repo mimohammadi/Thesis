@@ -1,5 +1,8 @@
+from pygad import pygad
+import numpy as np
 from config.constants import SystemModelEnums
 import math
+from algorithmes.gini_coefficient_alg import GiniCoefficientBasedAlg as gini
 
 
 class GiniFunctions:
@@ -46,3 +49,41 @@ class GiniFunctions:
         return SystemModelEnums.B.value * math.log(1 + ((SystemModelEnums.p__m * (
                     distances_of_fog[i][m] ** -SystemModelEnums.a.value) * SystemModelEnums.g_d_i_m.value)
                                                         / (SystemModelEnums.sigma_2.value + sum_)), 2)
+
+    @classmethod
+    def eliminating_conflict(cls, fitness, fogs_in_conflict):
+        # finding m_star by genetic alg
+        ga_instance = pygad.GA(num_generations=100,
+                               num_parents_mating=20,  # number of selected parents in each generation
+                               fitness_func=fitness,
+                               sol_per_pop=20,  # number oh chromosomes
+                               num_genes=1,
+                               gene_type=int,
+                               gene_space=fogs_in_conflict,
+                               parent_selection_type="rws",
+                               keep_parents=0,
+                               crossover_type="single_point",
+                               crossover_probability=0.1,
+                               mutation_type="random",
+                               mutation_probability=0.001,
+                               mutation_by_replacement=False)
+
+        ga_instance.run()
+        solution, solution_fitness, solution_idx = ga_instance.best_solution()
+        print("Parameters of the best solution : {solution}".format(solution=solution))
+        print("Fitness value of the best solution = {solution_fitness}".format(solution_fitness=solution_fitness))
+        print("Index of the best solution : {solution_idx}".format(solution_idx=solution_idx))
+        filename = 'genetic'
+        ga_instance.save(filename=filename)
+        loaded_ga_instance = pygad.load(filename=filename)
+        return loaded_ga_instance.best_solution()
+
+    @classmethod
+    def fitness_of_eliminating_conflict(cls, list_of_conflict_fogs):
+        # returns m_star
+        gamma_m = []
+        for m in list_of_conflict_fogs:
+            gamma_m.append(gini.task_makes_income_max(m))
+
+        m_star_index = np.argmax(gamma_m)
+        return list_of_conflict_fogs[m_star_index]
