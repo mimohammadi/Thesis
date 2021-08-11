@@ -16,6 +16,7 @@ class GiniCoefficientBasedAlg:
         conflict = 1
         fn_sum_gamma = []
         gamma_fn = []
+        a_i_m = []
         # sorted_mues_of_fn = []
         for m in range(SystemModelEnums.M.value):
             sum_of_gamma = 0
@@ -41,6 +42,7 @@ class GiniCoefficientBasedAlg:
 
         gini_m = []
         kappa_star_m = []
+        kappa_star_mues_m = []
         # b_i
         for m in range(SystemModelEnums.M.value):
             # sum_of_gamma_j_m = []
@@ -59,6 +61,7 @@ class GiniCoefficientBasedAlg:
             gini = 1 - ((1/len(set_of_mues_in_each_fn[m]))*(1 + 2 * sum_b_i))
             gini_m.append(gini)
 
+            # gamma as modified wight factor
             gamma_i = min(SystemModelEnums.f__0.value/np.argmax(list_of_d__n_of_tasks), len(set_of_mues_in_each_fn[m]),
                           SystemModelEnums.K__max.value)
 
@@ -66,9 +69,13 @@ class GiniCoefficientBasedAlg:
                            len(set_of_mues_in_each_fn[m]))
 
             kappa_star = []
+            kappa_star_mues = []
             for i in range(len(set_of_mues_in_each_fn[m]), len(set_of_mues_in_each_fn[m]) + 1 - k_star_m, -1):
                 kappa_star.append(gamma_fn[m][i]) # [2] means mue
+                kappa_star_mues.append(gamma_fn[m][i][2])
             kappa_star_m.append(kappa_star)
+            kappa_star_mues_m.append(kappa_star_mues)
+            a_i_m = cls.update_association_policy(kappa_star_mues_m)
 
         while conflict:
             for i in set_of_mues:
@@ -89,7 +96,14 @@ class GiniCoefficientBasedAlg:
                     conflict = 1
                     # gf.eliminating_conflict(gf.fitness_of_eliminating_conflict())
                     m_star = gf.fitness_of_eliminating_conflict(conflict_fogs)
-                    # cls.update_association_policy(, m_star, i, a_i_m)
+                    a_i_m = cls.update_association_policy(kappa_star_mues_m, m_star, i, a_i_m)
+                    for j in a_i_m:
+                        if j.count(1) == 0:
+
+                else:
+                    conflict = 0
+
+        return a_i_m
 
     @classmethod
     def task_makes_income_max(cls, m):
